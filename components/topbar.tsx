@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { Search, Plus, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { fetchProfileAvatar } from "@/lib/profile";
 
 interface TopbarProps {
   onAddGame: () => void;
@@ -16,6 +18,7 @@ export function Topbar({ onAddGame, searchQuery, onSearch }: TopbarProps) {
   const router = useRouter();
   const supabase = createClient();
   const [userEmail, setUserEmail] = useState<string>("Loading...");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -26,6 +29,14 @@ export function Topbar({ onAddGame, searchQuery, onSearch }: TopbarProps) {
       } = await supabase.auth.getUser();
       if (!mounted) return;
       setUserEmail(user?.email ?? "Unknown user");
+      if (user) {
+        try {
+          const profileAvatar = await fetchProfileAvatar(user.id);
+          if (mounted) setAvatarUrl(profileAvatar);
+        } catch {
+          if (mounted) setAvatarUrl(null);
+        }
+      }
     };
 
     loadUser();
@@ -34,6 +45,9 @@ export function Topbar({ onAddGame, searchQuery, onSearch }: TopbarProps) {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user?.email ?? "Unknown user");
+      if (!session?.user) {
+        setAvatarUrl(null);
+      }
     });
 
     return () => {
@@ -87,7 +101,15 @@ export function Topbar({ onAddGame, searchQuery, onSearch }: TopbarProps) {
           Logout
         </motion.button>
         <div className="glass hidden items-center gap-2 rounded-xl px-3 py-2 md:inline-flex">
-          <div className="h-7 w-7 rounded-full border border-white/15 bg-gradient-to-br from-fuchsia-500/70 to-cyan-400/70" />
+          {avatarUrl ? (
+            <div className="relative h-7 w-7 overflow-hidden rounded-full border border-white/15">
+              <Image src={avatarUrl} alt="Profile avatar" fill className="object-cover" />
+            </div>
+          ) : (
+            <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-fuchsia-500/70 to-cyan-400/70 text-[10px] font-semibold text-slate-950">
+              {(userEmail?.[0] ?? "U").toUpperCase()}
+            </div>
+          )}
           <span className="max-w-44 truncate text-xs text-slate-300">{userEmail}</span>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { Game, GameStatus, NewGameInput, UpdateGameInput } from "@/types/game";
+import { normalizeVersion } from "@/lib/version-check";
 
 interface DbGameRow {
   id: string;
@@ -8,6 +9,7 @@ interface DbGameRow {
   version: string;
   latest_version: string | null;
   has_update: boolean | null;
+  cover_url: string | null;
   link: string | null;
   notes: string | null;
   created_at: string;
@@ -40,10 +42,11 @@ function mapDbGame(row: DbGameRow): Game {
     version: row.version,
     latest_version: row.latest_version,
     has_update: Boolean(row.has_update),
+    cover_url: row.cover_url,
     link: row.link,
     notes: row.notes,
     created_at: row.created_at,
-    cover: pickCover(row.id)
+    cover: row.cover_url ?? pickCover(row.id)
   };
 }
 
@@ -101,12 +104,29 @@ export async function updateGame(input: UpdateGameInput) {
     throw new Error("You must be logged in to edit a game.");
   }
 
+  const { data: existingRow, error: existingError } = await supabase
+    .from("games")
+    .select("latest_version")
+    .eq("id", input.id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (existingError) {
+    throw new Error(existingError.message || "Failed to load game for update.");
+  }
+
+  const latestVersion = (existingRow as { latest_version: string | null } | null)?.latest_version;
+  const shouldClearUpdateFlag =
+    Boolean(latestVersion) &&
+    normalizeVersion(latestVersion ?? "") === normalizeVersion(input.version);
+
   const payload = {
     title: input.title.trim(),
     status: input.status,
     version: input.version.trim(),
     link: input.link.trim() || null,
-    notes: input.notes.trim() || null
+    notes: input.notes.trim() || null,
+    ...(shouldClearUpdateFlag ? { has_update: false } : {})
   };
 
   const { data, error } = await supabase

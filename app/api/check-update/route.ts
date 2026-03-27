@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as cheerio from "cheerio";
 import { createClient } from "@/lib/supabase/server";
 import {
   BROWSER_LIKE_USER_AGENT,
@@ -52,6 +53,20 @@ export async function POST(request: NextRequest) {
 
     const html = await response.text();
     const extractedVersion = extractVersion(html);
+    const $ = cheerio.load(html);
+
+    const container = $('[class*="Container-zoomer"]').first();
+    let img = container.find("img.bbImage").first();
+    let coverUrl = img.attr("src") || img.attr("data-src") || null;
+
+    if (!coverUrl) {
+      const fallbackImg = $("img.bbImage").first();
+      coverUrl = fallbackImg.attr("src") || fallbackImg.attr("data-src") || null;
+    }
+
+    if (coverUrl && coverUrl.startsWith("//")) {
+      coverUrl = `https:${coverUrl}`;
+    }
 
     if (!extractedVersion) {
       return NextResponse.json(
@@ -67,7 +82,8 @@ export async function POST(request: NextRequest) {
       .from("games")
       .update({
         latest_version: latestVersion,
-        has_update: hasUpdate
+        has_update: hasUpdate,
+        cover_url: coverUrl
       })
       .eq("id", gameId)
       .eq("user_id", user.id);
@@ -79,7 +95,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       gameId,
       latestVersion,
-      hasUpdate
+      hasUpdate,
+      coverUrl
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to check update.";

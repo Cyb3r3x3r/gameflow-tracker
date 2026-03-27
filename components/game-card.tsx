@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, LoaderCircle, Pencil, Trash2 } from "lucide-react";
 import { Game } from "@/types/game";
@@ -24,6 +25,7 @@ export function GameCard({
   onEdit,
   onDelete
 }: GameCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
   const hasProgress = typeof game.progress === "number";
   const cover =
     game.cover ??
@@ -43,8 +45,14 @@ export function GameCard({
           src={cover}
           alt={game.title}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          onLoad={() => setImageLoaded(true)}
+          className={`object-cover transition-all duration-500 group-hover:scale-105 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
         />
+        {!imageLoaded ? (
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-900/70 to-slate-700/20" />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
       </div>
 

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { User } from "@supabase/supabase-js";
 import { AccountCard } from "@/components/account/account-card";
 import { createClient } from "@/lib/supabase/client";
+import { fetchProfileAvatar, uploadAvatar } from "@/lib/profile";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -13,6 +14,10 @@ export default function AccountPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const loadUser = useCallback(async () => {
     const {
@@ -23,6 +28,14 @@ export default function AccountPage() {
 
     if (!currentUser) {
       router.push("/login");
+      return;
+    }
+
+    try {
+      const avatar = await fetchProfileAvatar(currentUser.id);
+      setAvatarUrl(avatar);
+    } catch {
+      setAvatarUrl(null);
     }
   }, [router, supabase]);
 
@@ -47,6 +60,24 @@ export default function AccountPage() {
     await supabase.auth.refreshSession();
     await loadUser();
     setRefreshing(false);
+  };
+
+  const handleAvatarSelect = async (file: File | null) => {
+    if (!file) return;
+
+    setUploadMessage(null);
+    setUploadError(null);
+    setUploadingAvatar(true);
+
+    try {
+      const publicUrl = await uploadAvatar(file);
+      setAvatarUrl(publicUrl);
+      setUploadMessage("Avatar updated successfully.");
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Failed to upload avatar.");
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   if (loading) {
@@ -87,7 +118,16 @@ export default function AccountPage() {
           className="pointer-events-none absolute bottom-10 right-10 h-44 w-44 rounded-full bg-cyan-400/15 blur-3xl"
         />
 
-        <AccountCard user={user} onRefreshSession={refreshSession} refreshing={refreshing} />
+        <AccountCard
+          user={user}
+          avatarUrl={avatarUrl}
+          uploadingAvatar={uploadingAvatar}
+          uploadMessage={uploadMessage}
+          uploadError={uploadError}
+          onAvatarSelect={handleAvatarSelect}
+          onRefreshSession={refreshSession}
+          refreshing={refreshing}
+        />
       </div>
     </main>
   );

@@ -7,6 +7,7 @@ export interface Game {
   version: string;
   latest_version: string | null;
   has_update: boolean;
+  cover_url: string | null;
   link: string | null;
   notes: string | null;
   created_at: string;
