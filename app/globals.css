@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body {
+  @apply bg-app-gradient text-slate-100 antialiased;
+  min-height: 100vh;
+}
+
+.glass {
+  @apply border border-panelBorder bg-panel backdrop-blur-xl;
+}
