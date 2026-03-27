@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, LoaderCircle, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, LoaderCircle, Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import { Game } from "@/types/game";
 import { StatusBadge } from "@/components/status-badge";
 
@@ -12,18 +12,22 @@ interface GameCardProps {
   game: Game;
   checking?: boolean;
   deleting?: boolean;
+  clearingUpdate?: boolean;
   onCheckUpdate?: (game: Game) => void;
   onEdit?: (game: Game) => void;
   onDelete?: (game: Game) => void;
+  onClearUpdate?: (game: Game) => void;
 }
 
 export function GameCard({
   game,
   checking = false,
   deleting = false,
+  clearingUpdate = false,
   onCheckUpdate,
   onEdit,
-  onDelete
+  onDelete,
+  onClearUpdate
 }: GameCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const hasProgress = typeof game.progress === "number";
@@ -76,8 +80,25 @@ export function GameCard({
           </Link>
         ) : null}
         {showUpdate ? (
-          <div className="inline-flex rounded-full border border-amber-300/35 bg-amber-400/15 px-2.5 py-1 text-xs font-medium text-amber-200">
-            Update Available (v{game.latest_version})
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-full border border-amber-300/35 bg-amber-400/15 px-2.5 py-1 text-xs font-medium text-amber-200">
+              Update Available (v{game.latest_version})
+            </div>
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onClearUpdate?.(game)}
+              disabled={clearingUpdate}
+              className="inline-flex items-center gap-1 rounded-full border border-emerald-300/35 bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-200 transition hover:border-emerald-300/55 disabled:cursor-not-allowed disabled:opacity-65"
+            >
+              {clearingUpdate ? (
+                <LoaderCircle size={11} className="animate-spin" />
+              ) : (
+                <ShieldCheck size={11} />
+              )}
+              {clearingUpdate ? "Saving..." : "Mark as Correct"}
+            </motion.button>
           </div>
         ) : null}
         {game.link ? (

@@ -13,6 +13,14 @@ interface CheckUpdateBody {
   currentVersion: string;
 }
 
+function normalizeCoverUrl(url: string | null) {
+  if (!url) return null;
+  if (url.includes("/thumb/")) {
+    return url.replace("/thumb/", "/");
+  }
+  return url;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as Partial<CheckUpdateBody>;
@@ -67,6 +75,7 @@ export async function POST(request: NextRequest) {
     if (coverUrl && coverUrl.startsWith("//")) {
       coverUrl = `https:${coverUrl}`;
     }
+    coverUrl = normalizeCoverUrl(coverUrl);
 
     if (!extractedVersion) {
       return NextResponse.json(

@@ -7,7 +7,7 @@ import { Topbar } from "@/components/topbar";
 import { GameGrid } from "@/components/game-grid";
 import { AddGameModal } from "@/components/add-game-modal";
 import { EditGameModal } from "@/components/edit-game-modal";
-import { createGame, deleteGame, fetchGames, updateGame } from "@/lib/games";
+import { clearGameUpdate, createGame, deleteGame, fetchGames, updateGame } from "@/lib/games";
 import { Game, GameStatus, NewGameInput, UpdateGameInput } from "@/types/game";
 
 export default function DashboardPage() {
@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [checkingGameId, setCheckingGameId] = useState<string | null>(null);
   const [deletingGameId, setDeletingGameId] = useState<string | null>(null);
+  const [clearingUpdateGameId, setClearingUpdateGameId] = useState<string | null>(null);
   const [checkUpdateError, setCheckUpdateError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [lastCheckByGameId, setLastCheckByGameId] = useState<Record<string, number>>({});
@@ -120,6 +121,21 @@ export default function DashboardPage() {
     setMutationError(null);
   };
 
+  const handleClearUpdateGame = async (game: Game) => {
+    try {
+      setMutationError(null);
+      setClearingUpdateGameId(game.id);
+      const updatedGame = await clearGameUpdate(game.id, game.version);
+      setGames((prev) => prev.map((item) => (item.id === updatedGame.id ? updatedGame : item)));
+    } catch (clearError) {
+      setMutationError(
+        clearError instanceof Error ? clearError.message : "Failed to clear update badge."
+      );
+    } finally {
+      setClearingUpdateGameId(null);
+    }
+  };
+
   return (
     <motion.main
       initial={{ opacity: 0, y: 12 }}
@@ -172,9 +188,11 @@ export default function DashboardPage() {
                 games={filteredGames}
                 checkingGameId={checkingGameId}
                 deletingGameId={deletingGameId}
+                clearingUpdateGameId={clearingUpdateGameId}
                 onCheckUpdate={handleCheckUpdate}
                 onEditGame={setEditingGame}
                 onDeleteGame={handleDeleteGame}
+                onClearUpdateGame={handleClearUpdateGame}
               />
             )}
           </div>

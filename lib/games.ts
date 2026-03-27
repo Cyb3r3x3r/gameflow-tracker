@@ -160,3 +160,32 @@ export async function deleteGame(gameId: string) {
     throw new Error(error.message || "Failed to delete game.");
   }
 }
+
+export async function clearGameUpdate(gameId: string, currentVersion: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error("You must be logged in to update badge status.");
+  }
+
+  const { data, error } = await supabase
+    .from("games")
+    .update({
+      has_update: false,
+      latest_version: currentVersion.trim()
+    })
+    .eq("id", gameId)
+    .eq("user_id", user.id)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Failed to clear update badge.");
+  }
+
+  return mapDbGame(data as DbGameRow);
+}

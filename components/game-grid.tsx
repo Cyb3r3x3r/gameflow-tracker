@@ -8,18 +8,22 @@ interface GameGridProps {
   games: Game[];
   checkingGameId: string | null;
   deletingGameId: string | null;
+  clearingUpdateGameId: string | null;
   onCheckUpdate: (game: Game) => void;
   onEditGame: (game: Game) => void;
   onDeleteGame: (game: Game) => void;
+  onClearUpdateGame: (game: Game) => void;
 }
 
 export function GameGrid({
   games,
   checkingGameId,
   deletingGameId,
+  clearingUpdateGameId,
   onCheckUpdate,
   onEditGame,
-  onDeleteGame
+  onDeleteGame,
+  onClearUpdateGame
 }: GameGridProps) {
   return (
     <motion.section
@@ -39,9 +43,11 @@ export function GameGrid({
             game={game}
             checking={checkingGameId === game.id}
             deleting={deletingGameId === game.id}
+            clearingUpdate={clearingUpdateGameId === game.id}
             onCheckUpdate={onCheckUpdate}
             onEdit={onEditGame}
             onDelete={onDeleteGame}
+            onClearUpdate={onClearUpdateGame}
           />
         </motion.div>
       ))}
